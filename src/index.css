@@ -6,6 +6,7 @@
   --neon-blue: #007bff;
   --neon-purple: #bc13fe;
   --neon-pink: #ff00ff;
+  --text-on-accent: #000000;
   
   /* Exact Flutter Dark Mode Palette */
   --bg-dark: #0a0c10;
@@ -36,12 +37,12 @@
   --glass-border: rgba(255, 255, 255, 0.05);
   
   /* Light Mode Palette */
-  --bg-light: #f6f8fa;
-  --surface-light: #ffffff;
-  --surface-light-soft: #f0f2f5;
-  --text-primary-light: #1f2328;
-  --text-secondary-light: #656d76;
-  --text-muted-light: #afb8c1;
+  --bg-light: radial-gradient(circle at 50% 30%, #fdf8eb 0%, #ffe1e5 50%, #ffb3c1 100%);
+  --surface-light: rgba(255, 255, 255, 0.55);
+  --surface-light-soft: rgba(255, 255, 255, 0.75);
+  --text-primary-light: #3a2229;
+  --text-secondary-light: #765660;
+  --text-muted-light: #a68992;
 }
 
 [data-theme="light"] {
@@ -51,8 +52,15 @@
   --text-primary: var(--text-primary-light);
   --text-secondary: var(--text-secondary-light);
   --text-muted: var(--text-muted-light);
-  --glow-cyan: 0 0 15px rgba(0, 123, 255, 0.1);
-  --glow-blue: 0 0 15px rgba(0, 123, 255, 0.1);
+  --glow-cyan: 0 10px 30px rgba(255, 105, 180, 0.15);
+  --glow-blue: 0 10px 30px rgba(255, 182, 193, 0.2);
+  
+  /* Accent Override for Light Mode (No jarring bluish teals!) */
+  --neon-cyan: #ff5e82; /* Warm vibrant rose pink */
+  --neon-blue: #9c54d7; /* Soft violet */
+  --neon-purple: #8b3cc4; /* Rich berry purple */
+  --neon-pink: #ff5c8a; /* Bright coral rose */
+  --text-on-accent: #ffffff;
 }
 
 * {
@@ -63,11 +71,12 @@
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: var(--bg-dark);
+  background: var(--bg-dark);
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Glassmorphism Classes */
@@ -79,8 +88,11 @@ body {
 }
 
 [data-theme="light"] .glass {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 105, 180, 0.15);
+  box-shadow: 0 8px 32px rgba(255, 182, 193, 0.08);
 }
 
 .glass-card {
@@ -108,7 +120,7 @@ body {
 /* Buttons */
 .btn-primary {
   background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
-  color: #000;
+  color: var(--text-on-accent, #000);
   border: none;
   padding: 12px 28px;
   border-radius: var(--border-radius-sm);

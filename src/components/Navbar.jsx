@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sun, Moon, LogOut, User, LayoutDashboard, Search, Utensils, Zap, Droplets, Heart, Sprout, Calendar, Activity, Wind } from 'lucide-react';
+import { Sun, Moon, LogOut, User, LayoutDashboard, Search, Utensils, Zap, Droplets, Heart, Sprout, Calendar, Activity, Wind, Plus } from 'lucide-react';
 
 export default function Navbar() {
   const { user, theme, toggleTheme, logout } = useAuth();
@@ -53,6 +53,9 @@ export default function Navbar() {
 
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button onClick={() => navigate('/add')} className="icon-btn" title="Create New Recipe">
+                <Plus size={18} color="var(--neon-cyan)" />
+              </button>
               {user.isAdmin && (
                 <button onClick={() => navigate('/admin')} className="icon-btn">
                   <LayoutDashboard size={18} color="var(--neon-purple)" />
@@ -122,12 +125,24 @@ export default function Navbar() {
         }
         .btn-primary-small {
           background: var(--neon-cyan);
-          color: #000;
+          color: var(--text-on-accent, #000);
           padding: 8px 16px;
           border-radius: 10px;
           font-size: 11px;
           font-weight: 800;
           text-decoration: none;
+        }
+        @media (max-width: 868px) {
+          .nav-container {
+            flex-direction: column;
+            height: auto !important;
+            padding: 15px 20px !important;
+            gap: 15px;
+          }
+          .nav-pill {
+            padding: 6px 12px !important;
+            font-size: 10px !important;
+          }
         }
       `}} />
     </nav>

@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRecipes } from '../context/RecipeContext';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, Edit3, Share2, Clock, Calendar, CheckCircle, Leaf, Zap, Heart } from 'lucide-react';
+import { ChevronLeft, Edit3, Share2, Clock, Calendar, CheckCircle, Leaf, Zap, Heart, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getRecipeImage } from '../utils/recipeImages';
+import paneerFallback from '../assets/paneer_dish.png';
+import chickenFallback from '../assets/chicken_dish.png';
 
 export default function RecipeDetail() {
   const { id } = useParams();
@@ -12,6 +15,19 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const [showToast, setShowToast] = useState(false);
   const recipe = recipes.find(r => r._id === id);
+  const imageUrl = recipe ? getRecipeImage(recipe) : '';
+  const [activeImgUrl, setActiveImgUrl] = useState(imageUrl);
+
+  useEffect(() => {
+    if (imageUrl) {
+      const img = new Image();
+      img.src = imageUrl;
+      img.onload = () => setActiveImgUrl(imageUrl);
+      img.onerror = () => {
+        setActiveImgUrl(recipe?.isVeg ? paneerFallback : chickenFallback);
+      };
+    }
+  }, [imageUrl, recipe]);
 
   if (!recipe) {
     return (
@@ -44,7 +60,7 @@ export default function RecipeDetail() {
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
       <div className="hero-banner" style={{ 
         height: '40vh', 
-        background: 'linear-gradient(to bottom, rgba(10, 12, 16, 0.4), var(--bg-dark)), url("https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=2053") center/cover',
+        background: `linear-gradient(to bottom, rgba(10, 12, 16, 0.4), var(--bg-dark)), url(${activeImgUrl}) center/cover`,
         display: 'flex',
         alignItems: 'flex-end',
         padding: '0 0 50px 0'
@@ -54,18 +70,18 @@ export default function RecipeDetail() {
             <ChevronLeft size={20} />
           </button>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div className="recipe-header-flex">
             <div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <span className="badge" style={{ background: 'rgba(0, 255, 242, 0.1)', color: 'var(--neon-cyan)' }}>{recipe.type?.toUpperCase()}</span>
                 <span className="badge" style={{ background: 'rgba(188, 19, 254, 0.1)', color: 'var(--neon-purple)' }}>{recipe.category}</span>
               </div>
-              <h1 style={{ fontSize: '56px', fontWeight: '900', lineHeight: 1.1 }}>{recipe.name}</h1>
+              <h1 className="recipe-title">{recipe.name}</h1>
             </div>
             
             <div style={{ display: 'flex', gap: '15px' }}>
               <button onClick={handleShare} className="glass btn-icon-round"><Share2 size={20} /></button>
-              {user?.isAdmin && (
+              {(user?.isAdmin || (recipe.author && user?.id === recipe.author)) && (
                 <button onClick={() => navigate(`/edit/${recipe._id}`)} className="glass btn-icon-round" style={{ borderColor: 'var(--neon-cyan)', color: 'var(--neon-cyan)' }}>
                   <Edit3 size={20} />
                 </button>
@@ -93,11 +109,11 @@ export default function RecipeDetail() {
         )}
       </AnimatePresence>
 
-      <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '50px 20px', display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '50px' }}>
+      <div className="container detail-grid-container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '50px 20px' }}>
         <main>
           <section style={{ marginBottom: '50px' }}>
             <h3 className="section-title">INGREDIENTS</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div className="ingredients-grid">
               {recipe.ingredients.map((ing, i) => (
                 <div key={i} className="glass" style={{ padding: '15px 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <CheckCircle size={16} color="var(--neon-cyan)" />
@@ -120,6 +136,14 @@ export default function RecipeDetail() {
             <h4 style={{ fontSize: '12px', fontWeight: '900', letterSpacing: '2px', color: 'var(--neon-blue)', marginBottom: '25px' }}>HEALTH VITALS</h4>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="vital-item">
+                <User size={20} color="var(--neon-blue)" />
+                <div>
+                  <div className="vital-label">CREATOR</div>
+                  <div className="vital-value">{recipe.authorName || 'System'}</div>
+                </div>
+              </div>
+
               <div className="vital-item">
                 <Leaf size={20} color={recipe.isVeg ? 'var(--neon-cyan)' : '#ff4444'} />
                 <div>
@@ -181,6 +205,48 @@ export default function RecipeDetail() {
         }
         .benefit-tag {
           background: rgba(255, 0, 255, 0.05); color: var(--neon-pink); padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255, 0, 255, 0.1);
+        }
+        .recipe-header-flex {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 20px;
+          width: 100%;
+        }
+        .recipe-title {
+          font-size: 56px;
+          font-weight: 900;
+          line-height: 1.1;
+        }
+        .detail-grid-container {
+          display: grid;
+          grid-template-columns: 1.6fr 1fr;
+          gap: 50px;
+        }
+        .ingredients-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+        @media (max-width: 868px) {
+          .detail-grid-container {
+            grid-template-columns: 1fr;
+            gap: 30px;
+          }
+        }
+        @media (max-width: 768px) {
+          .recipe-header-flex {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .recipe-title {
+            font-size: 32px;
+          }
+        }
+        @media (max-width: 580px) {
+          .ingredients-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}} />
     </div>

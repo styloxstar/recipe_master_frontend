@@ -2,12 +2,16 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useRecipes } from '../context/RecipeContext';
 import { useAuth } from '../context/AuthContext';
 import { Search, Filter, FileText, Grid, Plus, ChevronLeft, ChevronRight, Info, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getRecipeImage } from '../utils/recipeImages';
+import paneerFallback from '../assets/paneer_dish.png';
+import chickenFallback from '../assets/chicken_dish.png';
 
 export default function Home({ type = 'recipe' }) {
   const { recipes, loading, pagination, fetchRecipes } = useRecipes();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [isVegFilter, setIsVegFilter] = useState('all'); // 'all', 'true', 'false'
@@ -103,6 +107,11 @@ export default function Home({ type = 'recipe' }) {
             </div>
 
             <div className="export-actions">
+              {user && (
+                <button onClick={() => navigate('/add')} className="export-btn add" style={{ color: 'var(--neon-cyan)', borderColor: 'var(--neon-cyan)' }} title="Add New Item">
+                  <Plus size={16} /> ADD NEW
+                </button>
+              )}
               <button onClick={() => handleExport('pdf')} className="export-btn pdf" title="Export PDF">
                 <FileText size={16} /> PDF
               </button>
@@ -186,8 +195,8 @@ export default function Home({ type = 'recipe' }) {
       <style dangerouslySetInnerHTML={{ __html: `
         .home-root {
           min-height: calc(100vh - 60px);
-          background: var(--bg-dark);
-          color: #fff;
+          background: transparent;
+          color: var(--text-primary);
         }
         .content-container {
           max-width: 1400px;
@@ -267,7 +276,7 @@ export default function Home({ type = 'recipe' }) {
         .pill:hover { background: rgba(255,255,255,0.06); }
         .pill.active {
           background: var(--neon-cyan);
-          color: #000;
+          color: var(--text-on-accent, #000);
           border-color: var(--neon-cyan);
         }
         .pill-count {
@@ -335,6 +344,23 @@ export default function Home({ type = 'recipe' }) {
         .export-btn.pdf:hover { color: #f87171; }
         .export-btn.excel:hover { color: #4ade80; }
         
+        @media (max-width: 768px) {
+          .filters-section {
+            width: 100%;
+          }
+          .type-filters {
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+          .export-actions {
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+            border-left: none !important;
+            justify-content: center;
+            width: 100%;
+          }
+        }
+        
         .recipe-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -382,7 +408,7 @@ export default function Home({ type = 'recipe' }) {
         .pag-btn {
           background: transparent;
           border: 1px solid rgba(255,255,255,0.1);
-          color: #fff;
+          color: var(--text-primary);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -413,69 +439,133 @@ export default function Home({ type = 'recipe' }) {
 }
 
 function RecipeCard({ recipe }) {
+  const imageUrl = getRecipeImage(recipe);
+
   return (
     <Link to={`/recipe/${recipe._id}`} className="exact-card" style={{ textDecoration: 'none', color: 'inherit' }}>
       <div className="card-inner glass">
-        <div className="card-header">
-          <h4 className="recipe-name">{recipe.name}</h4>
+        <div className="card-image-wrapper">
+          <img 
+            src={imageUrl} 
+            alt={recipe.name} 
+            className="card-food-img" 
+            loading="lazy" 
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = recipe.isVeg ? paneerFallback : chickenFallback;
+            }}
+          />
           <div className={`diet-indicator ${recipe.isVeg ? 'veg' : 'non-veg'}`}>
              <div className="dot" /> {recipe.isVeg ? 'Veg' : 'Non-Veg'}
           </div>
         </div>
-        
-        <div className="card-tags">
-          <span className="tag type-tag">{recipe.type}</span>
-          {recipe.category && <span className="tag cat-tag">{recipe.category}</span>}
-        </div>
 
-        <div className="ingredients-preview">
-          <div className="ing-label">INGREDIENTS ({recipe.ingredients.length})</div>
-          <div className="ing-pills">
-            {recipe.ingredients.slice(0, 4).map((ing, i) => (
-              <span key={i} className="ing-pill">{ing}</span>
-            ))}
-            {recipe.ingredients.length > 4 && <span className="ing-pill more">+{recipe.ingredients.length - 4}</span>}
+        <div className="card-content">
+          <div className="card-header">
+            <h4 className="recipe-name">{recipe.name}</h4>
           </div>
-        </div>
+          
+          <div className="card-tags">
+            <span className="tag type-tag">{recipe.type}</span>
+            {recipe.category && <span className="tag cat-tag">{recipe.category}</span>}
+          </div>
 
-        <div className="card-footer">
-          <span className="timing">cook {recipe.timing || '5 min'}</span>
+          <div className="ingredients-preview">
+            <div className="ing-label">INGREDIENTS ({recipe.ingredients.length})</div>
+            <div className="ing-pills">
+              {recipe.ingredients.slice(0, 4).map((ing, i) => (
+                <span key={i} className="ing-pill">{ing}</span>
+              ))}
+              {recipe.ingredients.length > 4 && <span className="ing-pill more">+{recipe.ingredients.length - 4}</span>}
+            </div>
+          </div>
+
+          <div className="card-footer">
+            <span className="timing">cook {recipe.timing || '5 min'}</span>
+            <span className="author">
+              BY {recipe.authorName || 'System'}
+            </span>
+          </div>
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .exact-card { display: block; height: 100%; transition: transform 0.3s ease; }
-        .exact-card:hover { transform: translateY(-5px); }
+        .exact-card { display: block; height: 100%; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .exact-card:hover { transform: translateY(-6px); }
         .card-inner {
-          padding: 24px;
           border-radius: 16px;
           height: 100%;
           border: 1px solid rgba(0, 255, 242, 0.1);
           background: rgba(255, 255, 255, 0.01);
           display: flex;
           flex-direction: column;
-          gap: 15px;
+          overflow: hidden;
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
-        .exact-card:hover .card-inner { border-color: rgba(0, 255, 242, 0.4); box-shadow: 0 0 20px rgba(0, 255, 242, 0.1); }
+        .exact-card:hover .card-inner { border-color: rgba(0, 255, 242, 0.4); box-shadow: 0 10px 30px rgba(0, 255, 242, 0.08); }
+        
+        .card-image-wrapper {
+          position: relative;
+          width: 100%;
+          height: 180px;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.02);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .card-food-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .exact-card:hover .card-food-img {
+          transform: scale(1.06);
+        }
+        
+        .card-content {
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+          flex: 1;
+        }
+        
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .recipe-name { font-size: 16px; font-weight: 700; color: #fff; margin: 0; line-height: 1.4; flex: 1; }
-        .diet-indicator { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; }
-        .diet-indicator.veg { color: #4ade80; background: rgba(74, 222, 128, 0.1); }
-        .diet-indicator.non-veg { color: #f87171; background: rgba(248, 113, 113, 0.1); }
-        .diet-indicator .dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+        .recipe-name { font-size: 17px; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.4; flex: 1; }
+        
+        .diet-indicator {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 10px;
+          font-weight: 800;
+          padding: 4px 10px;
+          border-radius: 8px;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          z-index: 2;
+        }
+        .diet-indicator.veg { color: #4ade80; background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.2); }
+        .diet-indicator.non-veg { color: #f87171; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.2); }
+        .diet-indicator .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
         
         .card-tags { display: flex; gap: 8px; flex-wrap: wrap; }
         .tag { font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 6px; letter-spacing: 1px; text-transform: uppercase; }
-        .type-tag { background: #38bdf822; color: #38bdf8; }
-        .cat-tag { background: #fbbf2422; color: #fbbf24; }
+        .type-tag { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.1); }
+        .cat-tag { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.1); }
         
         .ing-label { font-size: 9px; font-weight: 900; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 1px; }
         .ing-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-        .ing-pill { background: rgba(255,255,255,0.05); color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 10px; }
+        .ing-pill { background: rgba(255,255,255,0.05); color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 10px; border: 1px solid rgba(255,255,255,0.03); }
         .ing-pill.more { background: rgba(255,255,255,0.1); color: #fff; }
         
-        .card-footer { margin-top: auto; display: flex; justify-content: flex-start; }
+        .card-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; width: 100%; }
         .timing { font-size: 10px; color: var(--text-muted); font-style: italic; }
+        .author { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; font-weight: 600; }
       `}} />
     </Link>
   );
